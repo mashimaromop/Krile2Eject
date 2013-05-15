@@ -1,5 +1,7 @@
 ﻿using Acuerdo.Plugin;
 using Dulcet.Twitter;
+using Inscribe.Common;
+using Inscribe.Core;
 using Inscribe.Storage;
 using System;
 using System.ComponentModel.Composition;
@@ -33,6 +35,11 @@ namespace Krile2Eject
             if (Eject.CanEject())
             {
                 TweetStorage.TweetStorageChanged += new EventHandler<TweetStorageChangedEventArgs>(TweetStorage_Changed);
+
+                KernelService.AddMenu("eject", () =>
+                    KeyAssignHelper.ExecuteTabAction(tw =>
+                        Task.Factory.StartNew(() => EjectOrClose())
+                    ));
             }
         }
 
@@ -49,14 +56,19 @@ namespace Krile2Eject
                     if (e.Tweet.IsMentionToMe &&
                         e.Tweet.Text.IndexOf("eject", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        if (!this.IsOpen)
-                            Eject.Open();
-                        else
-                            Eject.Close();
-                        this.IsOpen = !this.IsOpen;
+                        EjectOrClose();
                     }
                 }
             });
+        }
+
+        private void EjectOrClose()
+        {
+            if (!this.IsOpen)
+                Eject.Open();
+            else
+                Eject.Close();
+            this.IsOpen = !this.IsOpen;
         }
     }
 }
