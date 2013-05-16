@@ -38,37 +38,34 @@ namespace Krile2Eject
 
                 KernelService.AddMenu("eject", () =>
                     KeyAssignHelper.ExecuteTabAction(tw =>
-                        Task.Factory.StartNew(() => EjectOrClose())
+                            EjectOrClose()
                     ));
             }
         }
 
         private void TweetStorage_Changed(object sender, TweetStorageChangedEventArgs e)
         {
-            Task.Factory.StartNew(() =>
+            if (e.ActionKind == TweetActionKind.Added &&
+                e.Tweet.IsStatus &&
+                !e.Tweet.IsMyTweet &&
+                e.Tweet.IsMentionToMe &&
+                (e.Tweet.Status as TwitterStatus).RetweetedOriginal == null &&
+                e.Tweet.Text.IndexOf("eject", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                if (e.ActionKind == TweetActionKind.Added)
-                {
-                    if (!e.Tweet.IsStatus) return;
-                    if (e.Tweet.IsMyTweet) return;
-                    if ((e.Tweet.Status as TwitterStatus).RetweetedOriginal != null) return;
-
-                    if (e.Tweet.IsMentionToMe &&
-                        e.Tweet.Text.IndexOf("eject", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        EjectOrClose();
-                    }
-                }
-            });
+                EjectOrClose();
+            }
         }
 
         private void EjectOrClose()
         {
-            if (!this.IsOpen)
-                Eject.Open();
-            else
-                Eject.Close();
-            this.IsOpen = !this.IsOpen;
+            Task.Factory.StartNew(() =>
+            {
+                if (!this.IsOpen)
+                    Eject.Open();
+                else
+                    Eject.Close();
+                this.IsOpen = !this.IsOpen;
+            });
         }
     }
 }
